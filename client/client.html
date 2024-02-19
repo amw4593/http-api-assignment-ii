@@ -5,7 +5,84 @@
   <link rel="stylesheet" type="text/css" href="/style.css">
   
   <script>
+const handleResponse = async (response, parseResponse) => {
+  const content = document.querySelector('#content');
 
+  switch (response.status) {
+    case 200:
+      content.innerHTML = '<b>Success</b>';
+      break;
+    case 201:
+      content.innerHTML = '<b>Created</b>';
+      break;
+    case 204:
+      content.innerHTML = '<b>No Content</b>';
+      break;
+    case 400:
+      const errorJSON = await response.json();
+      content.innerHTML = `<b>Bad Request:</b> ${errorJSON.message}`;
+      break;
+    case 404:
+      content.innerHTML = '<b>Resource Not Found</b>';
+      break;
+    default:
+      content.innerHTML = `Error code not implemented by client.`;
+      break;
+  }
+
+  if (parseResponse && response.status !== 204) {
+    let obj = await response.json();
+    let jsonString = JSON.stringify(obj);
+    content.innerHTML += `<p>${jsonString}</p>`;
+  } else {
+    content.innerHTML += '<p>Meta Data Received</p>';
+  }
+};
+
+const requestUpdate = async (userForm) => {
+  const url = userForm.querySelector('#urlField').value;
+  const method = userForm.querySelector('#methodSelect').value;
+
+  let response;
+
+  try {
+    response = await fetch(url, {
+      method,
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: method === 'POST' ? JSON.stringify(getFormData(userForm)) : null,
+    });
+
+    handleResponse(response, method === 'GET');
+  } catch (error) {
+    console.error('Error:', error);
+  }
+};
+
+const getFormData = (form) => {
+  const formData = new FormData(form);
+  const data = {};
+  formData.forEach((value, key) => {
+    data[key] = value;
+  });
+  return data;
+};
+
+const init = () => {
+  const userForm = document.querySelector('#userForm');
+
+  const getUsers = (e) => {
+    e.preventDefault();
+    requestUpdate(userForm);
+    return false;
+  }
+
+  userForm.addEventListener('submit', getUsers);
+};
+
+window.onload = init;
   </script>
 </head>
 <body>
